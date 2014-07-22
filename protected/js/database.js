@@ -8,10 +8,7 @@ var mongoose = require('mongoose');
 mongoose.createConnection('mongodb://localhost/identification', function(err) {
   if (err) { throw err; }
 });
- // create = function () {
-	// db.run("CREATE TABLE database (mail TEXT, id TEXT, mdp TEXT, log_temp TEXT, date TEXT)");
-    // db.close();
-// };
+//*********************************************************************************
 // Création du schéma pour les db
 var structure = new mongoose.Schema({
 	id : String,
@@ -20,39 +17,24 @@ var structure = new mongoose.Schema({
 	log_temp : String,
 	date : String,
 });
+//*********************************************************************************
 insert = function(obj, fonction){
+	var date = new Date();
 	var text = mongoose.model('db', structure);
 	var monText = new text({ id : obj.id });
 	monText.id = obj.id;
 	monText.mail = obj.mail;
 	monText.mdp = obj.mdp;
 	monText.log_temp = obj.log_temp;
-	monText.date = obj.date;
+	monText.date = date.valueOf();
 	console.log("une instance est creer");
 	monText.save(function (err) {
 	  if (err) { throw err; }
 	  console.log('Enregistrement dans la base de donnée !');
 	  obj[fonction]("Votre compte est créé");
 	});
-	
-	  // On se déconnecte de MongoDB maintenant
-	  // mongoose.connection.close();
 }
-// exports.verifMail = function (obj, fonction) {
-	// var stmt = "SELECT mail FROM database WHERE mail = \'" + obj.mail + "\'";
-	// db.get(stmt, function (e, r) {
-		// if(e) {
-			// util.log("ERROR - " + e);
-		// } else if(r) {
-			// console.log("Adresse mail deja enregistree");
-			// obj[fonction]("Cette adresse est déjà enregistrée");
-		// } else {
-			// console.log("Adresse mail disponible");
-			// ev.emit("GO_1", obj, fonction);
-		// }
-	// });
-// };
-
+//*********************************************************************************
 exports.verifMail = function(obj, fonction){
 	var text = mongoose.model('db', structure);
 	var query = text.find(null);
@@ -70,20 +52,7 @@ exports.verifMail = function(obj, fonction){
 	}
 })
 }
-// verifId = function (obj, fonction) {
-	// var stmt = "SELECT id FROM database WHERE id = \'" + obj.id + "\'";
-	// db.get(stmt, function (e, r) {
-		// if(e) {
-			// util.log("ERROR - " + e);
-		// } else if(r) {
-			// console.log("Identifiant deja utilise");
-			// obj[fonction]("Cette identifiant est déjà utilisé");
-		// } else {
-			// console.log("Identifiant disponible");
-			// ev.emit("GO_2", obj, fonction);
-		// }
-	// });
-// };
+//*********************************************************************************
 verifId  = function(obj, fonction){
 console.log(obj.id);
 	var text = mongoose.model('db', structure);
@@ -101,98 +70,114 @@ console.log(obj.id);
 	}
 })
 }
+//*********************************************************************************
 exports.verifLogin = function (obj, fonction) {
 console.log(util.inspect(obj.id)+"1111");
 console.log(util.inspect(obj.mdp)+"1111");
 	var new_log_temp = Math.floor(Math.random()*1000000000);
+console.log(new_log_temp+"               1111");	
 	var new_date = new Date();
 	var text = mongoose.model('db', structure);
 	var query = text.find(null);
-	query.select("id mdp").where('id').equals(obj.id).where('mdp').equals(obj.mdp); //.update({$set: {log_temp: new_log_temp}}).update({$set: {date: new_date.valueOf()}});
+	query.select("id mdp log_temp date").where('id').equals(obj.id).where('mdp').equals(obj.mdp); 
 	query.exec(function (err, data) {
-	if (err) return (err);
-	if(data[0]){
-	console.log(util.inspect(data)+"------------------DATA-------------------"); 
-	obj[fonction]("Login ok", new_log_temp);
-	}else {
-			console.log("-----------Identifiant ou mot de passe invalide--------------------");
-			obj[fonction]("Ce compte n'existe pas");
+		if (err) return (err);
+		if(data[0]){
+		console.log("-----------Identifiant validé --------------------");
+		console.log(util.inspect(data)+"------------------DATA-------------------"); 
+			var text = mongoose.model('db', structure);
+			text.update({id: obj.id}, { $set: {log_temp: new_log_temp}}, function(){//
+				var query = text.find(null);
+				query.select("id mdp log_temp date").where('id').equals(obj.id);
+				query.exec(function (err, data) {
+					if (err) return Error(err);
+					util.log("----------Actualisation du login temporaire---------------");
+					console.log(util.inspect(data)+"------------------DATA-------------------");
+					var text = mongoose.model('db', structure);
+					var date = new Date();
+					text.update({id: obj.id}, { $set: {date: date.valueOf()}}, function(){//
+						var query = text.find(null);
+						query.select("id mdp log_temp date").where('id').equals(obj.id);
+						query.exec(function (err, data) {
+							if (err) return Error(err);
+							util.log("----------Actualisation de la date---------------");
+							console.log(util.inspect(data)+"------------------DATA-------------------"); 
+							obj[fonction]("Login ok", new_log_temp);
+						});
+					});
+				});
+			});
+		}else {
+				console.log("-----------Identifiant ou mot de passe invalide--------------------");
+				obj[fonction]("Ce compte n'existe pas");
 		}
 	});
-	
-	// var stmt = "SELECT id FROM database WHERE id=\'" + obj.id + "\' AND mdp=\'" + obj.mdp + "\'";
-	// db.get(stmt, function (e, r) {
-		// if(e) {
-			// util.log("ERROR - " + e);
-		// } else if(r){
-			// console.log("Connexion etablie");
-			// var stmt2 = db.prepare("UPDATE database SET log_temp = \'"+new_log_temp+"\', date = "+new_date.valueOf()+" WHERE id = \'" + obj.id + "\'");
-			// stmt2.run();
-			// stmt2.finalize();
-			// obj[fonction]("Login ok", new_log_temp);
-		// } else {
-			// console.log("Identifiant ou mot de passe invalide");
-			// obj[fonction]("Ce compte n'existe pas");
-		// }
-	// });	
 };
-
+//*********************************************************************************
 exports.checkDatabase = function (obj, function1, function2) {
-	var log_temp = obj.req.headers.cookie;
-	// util.log("Identifiant temporaire : " + log_temp);	
+	var log_tempp = obj.req.headers.cookie;	
+	util.log("Identifiant temporaire : " + log_tempp);
 	var text = mongoose.model('db', structure);
 	var query = text.find(null);
-	query.select("id date log_temp").where('log_temp').equals(log_temp);
+	query.select("id mdp log_temp date").where('log_temp').equals(log_tempp); 
 	query.exec(function (err, data) {
-	// db.serialize(function () {
 		var new_date = new Date();
-		// var stmt = "SELECT id,date FROM database WHERE log_temp = " + log_temp;
-		// db.get(stmt, function (e, r) {
-			// util.log("-----------------------" + util.inspect(r));
-			// if (e) {
-				// util.log("ERROR - " + e);
-			// } else if (r) {
-				// if (((new_date.valueOf() - r.date)/(1000)) < 10*60) {
-				if (((new_date.valueOf() - data.date)/(1000)) < 10*60) {
-					// util.log("Actualisation de la date du login temporaire");
-					// var stmt2 = db.prepare("UPDATE database SET date = "+new_date.valueOf()+" WHERE log_temp = " + log_temp);
-					// stmt2.run();
-					// stmt2.finalize();
-					// obj[function1](r.id);
+		if(data){
+		util.log("-----------/////////\\\\\\\\\\\\\\------------");
+		util.log("-----------------------" + util.inspect(data));
+				if (((new_date.valueOf() - (+data[0].date))/(1000)) < 10*60) {   // TOTD 
+					util.log("----------Actualisation------------------------------------");
 					var text = mongoose.model('db', structure);
-					var query = text.find(null);
-					query.select("id date log_temp").where('log_temp').equals(log_temp).update({$set: {log_temp: new_log_temp}});
-					query.exec(function (err, data) {
-					// } else {
-					// util.log("La date de l'identifiant temporaire n'est plus valide");
-					// obj[function2]();
-				// }
-				})
-			} else {
-				// util.log("Identifiant temporaire inconnu");
-				obj[function2]();
-			}
-		});
+					text.update({log_temp: log_tempp}, { $set: {log_temp: log_tempp}}, function(){
+						var query = text.find(null);
+						query.select("id mdp log_temp date").where('log_temp').equals(log_tempp);
+						query.exec(function (err, data) {
+							if (err) return Error(err);
+							util.log("----------Actualisation de du log tmp---------------");
+							console.log(util.inspect(data)+"------------------DATA-------------------");
+							var text = mongoose.model('db', structure);
+							var date = new Date();
+							text.update({id: obj.id}, { $set: {date: date.valueOf()}}, function(){//
+									util.log("----------Actualisation de la date---------------");
+									console.log(util.inspect(data)+"------------------DATA-------------------"); 
+									var query = text.find(null);
+									query.select("id mdp log_temp date").where('log_temp').equals(log_tempp);
+									query.exec(function (err, data) {
+										if (err) return Error(err);
+										util.log("----------Actualisation de la date---------------");
+										console.log(util.inspect(data)+"------------------DATA-------------------"); 
+										obj[function1](data[0].id);
+									});
+							});
+						});
+					});		
+				} else {
+					util.log("-------La date de l'identifiant temporaire n'est plus valide------------");
+					obj[function2]();
+				}
+		} else {
+			util.log("------------------Identifiant temporaire inconnu-------------------------------");
+			obj[function2]();
+		}		
+	});	
 };
-
+//*********************************************************************************
 exports.erase_log = function (obj, fonction) {
 	var new_log = "NonConnecté";
-	// console.log("Effacement loggin temporaire dans la base de donnée");
-	var stmt = db.prepare("UPDATE database SET log_temp = \'"+new_log+"\' WHERE log_temp = \'" +obj.log_temp+ "\'")
-	stmt.run();
-	stmt.finalize();
+	console.log("Effacement loggin temporaire dans la base de donnée");
+	var text = mongoose.model('db', structure);
+	text.update({log_temp: obj.log_temp}, { $set: {log_temp: new_log}}, function(){
+	var query = text.find(null);//
+	query.select("id mdp log_temp date").where('log_temp').equals(new_log); //
+	query.exec(function (err, data) {//
+	if (err) return Error(err);//
+	console.log(data[0]);//
 	obj[fonction]("Deconnexion");
+	})//
+	});
+
 };
-
-read = function () {
-    var stmt = "SELECT * FROM database";
-    db.each(stmt, function (e, r) {
-        util.log(util.inspect(r));
-    });
-    db.close();
-};
-
-
+//*********************************************************************************
 var selecAll = function(item){
 	var text = mongoose.model('db', structure);
 	var query = text.find(null);

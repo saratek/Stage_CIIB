@@ -1,9 +1,9 @@
 var http = require("http");
 var util = require("util");
 var fs = require("fs");
-var router = require("../protected/js/router.js");
+var router = require("./protected/js/router.js");
 
-fs.exists('../public/acceuil.html', function (exist) {
+fs.exists('./public/acceuil.html', function (exist) {
             if (exist) {
 			console.log("----------acceuil-------------");
 			}

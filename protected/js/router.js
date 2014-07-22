@@ -34,6 +34,7 @@ constructeur = function (req, resp) {
 constructeur.prototype = {
 traitement_method:
     function () {
+	console.log("----------------------------11---------------------------------------------------------");
         util.log("Requete reçue de type : " + this.req.method + ".");
 		
         if (this.req.method == "GET") {
@@ -50,6 +51,7 @@ traitement_method:
 
 post_method:
     function () {
+	console.log("----------------------------10---------------------------------------------------------");
 		util.log("Traitement requete POST en cours...");
 		/*
 		* _this conservera le pointeur sur l'objet dans une fonction créée à l'intérieur d'une methode
@@ -60,6 +62,7 @@ post_method:
 		// Ecoute de la requête POST et collecte des paquets
         this.req.on("data", function (paquet) {
 			paquets += paquet;
+			console.log(paquets);
         });
 		
 		// Action de fin d'écoute, lorsque le dernier paquet est reçu
@@ -70,16 +73,14 @@ post_method:
 
 go_post:
     function (paquets) {
-		/*
-		* util.inspect() -> affiche le contenu d'un objet sous forme d'une chaîne de caractères
-		* JSON.parse() -> Convertie un String en JSON
-		*/
+		console.log("----------------------------9---------------------------------------------------------");
 		console.log(util.inspect(paquets)+"paquets");
 		post.postReq(paquets, this.req, this.resp);
     },
 
 get_method:
     function () {
+	console.log("----------------------------8---------------------------------------------------------");
 		util.log("Traitement requete GET en cours...");
         var u = url.parse(this.req.url, true, true); // Extrait la valeur url de l'objet 'requête'
 		util.log("Pathname : " + u.pathname);
@@ -88,14 +89,14 @@ get_method:
         this.pathname = this.pathname.splice(1, this.pathname.length - 1); // Supprime le 1er caractère de la chaîne
         this.filetype = this.pathname[this.pathname.length - 1].split("."); // Sépare le dernier caractère en deux au "."
 		this.filetype = this.filetype[this.filetype.length - 1]; // Récupère l'extension du fichier
-		this.path = "../public" + u.path + ((u.path.indexOf(".") >= 0) ? "" : this.extension());
+		this.path = "./public" + u.path + ((u.path.indexOf(".") >= 0) ? "" : this.extension());
 		// this.path = "." + u.path + ((u.path.indexOf(".") >= 0) ? "" : this.extension());
-        
 		this.read_file();
     },
 	
 extension:
 	function () {
+	console.log("----------------------------7---------------------------------------------------------");
 		util.log("Ajout de l'extension");
 		this.filetype = "html";
 		return ".html";
@@ -103,13 +104,14 @@ extension:
 
 read_file:
     function () {
+	console.log("----------------------------6---------------------------------------------------------");
 		var _this = this;
 		/* Si le chemin est vide on retourne la page d'acceuil */
 		util.log("Path : " + this.path/* + " " + util.inspect(this.pathname)*/);
         if (!this.pathname[0] || this.path.indexOf("protected") >= 0) {
-            this.pathname = "../public/acceuil.html";
+            this.pathname = "./public/acceuil.html";
             // this.pathname = "./acceuil.html";
-            this.path = "../public/acceuil.html";
+            this.path = "./public/acceuil.html";
             // this.path = "./acceuil.html";
             this.filetype = "html";
         }
@@ -117,7 +119,8 @@ read_file:
     },
 
 load_file:
-    function () {	
+    function () {
+	console.log("----------------------------5---------------------------------------------------------");
 		var _this = this;
 		/* Le systeme vérifie si le chemin (this.path) donné en argument existe */
         fs.exists(this.path, function (exist) {
@@ -128,11 +131,13 @@ load_file:
 						_this.resp.writeHead(500, {"Content-Type": "text/html"});
 						_this.resp.end();
                     } else {
-                        _this.file = contenu; // On attribue la valeur trouvée "contenu" à la variable "_file"					
-                        _this.file_processing();			
+                        _this.file = contenu; // On attribue la valeur trouvée "contenu" à la variable "_file"						
+                        _this.file_processing();
+						// database.checkDatabase(this, "load_file", "retour_acceuil");
                     }
                 });
             } else if (!(_this.path.indexOf("protected") >= 0) && _this.path.indexOf("principale") >= 0) {
+			console.log("*******//////////***********on passsssssseeeeeeee iciiiii ???*****//////////////**********");
 				database.checkDatabase(_this, "changement_dossier", "retour_acceuil");
 			} else {
 				util.log("INFO - File requested not found : " + _this.path);
@@ -145,6 +150,7 @@ load_file:
 	
 changement_dossier:
 	function () {
+	console.log("----------------------------4---------------------------------------------------------");
 		this.path = this.path.replace("public", "protected");
 		// util.log("Recherche dans le dossier \'protected\' : " + this.path);
 		this.load_file();
@@ -152,14 +158,16 @@ changement_dossier:
 	
 retour_acceuil:
 	function () {
-		this.pathname = "../public/acceuil.html";
-		this.path = "../public/acceuil.html";
+	console.log("----------------------------3---------------------------------------------------------");
+		this.pathname = "./public/acceuil.html";
+		this.path = "./public/acceuil.html";
 		this.filetype = "html";
 		this.load_file();
 	},
 
 file_processing:
     function () {
+	console.log("----------------------------2---------------------------------------------------------");
         if (this.filetype == "htm") {
             this.resp.writeHead(200, { "Content-Type" : "text/html"});
         }
@@ -177,6 +185,7 @@ file_processing:
 
 file_send:
     function () {
+		console.log("----------------------------1---------------------------------------------------------");
         this.resp.write(this.file); // Affichage du contenu
         this.resp.end();
     }

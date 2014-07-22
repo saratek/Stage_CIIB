@@ -1,7 +1,8 @@
 var util = require("util");
 var database = require('./database.js');
-var db = require('./prospection.js');
-var fax =  require('./test_faxio.js');
+var mongoose = require('./mongoose.js');
+var up = require('./get_infoo.js');
+
 
 exports.postReq = function(paquets, req, resp) {
 	util.log("Reception paquets : " + util.inspect(paquets));
@@ -12,13 +13,9 @@ exports.postReq = function(paquets, req, resp) {
 		traitement_post.create();
 	} else if (paquets.act == "deconnect") {
 		traitement_post.deconnect();
-	} else if (paquets.act == "get_criteres") {
+	}else if (paquets.act == "update") {
 		console.log("ETAPE REUSIT");
-		traitement_post.get_criteres(paquets);
-	}else if (paquets.act == "send_fax") {
-		console.log("ETAPE REUSIT");
-		traitement_post.send_fax(paquets);
-	
+		traitement_post.update(paquets);
 	} else {
 		util.log("Un problème est survenuuu lors du traitement de la requête : " + util.inspect(paquets.act));
 	}
@@ -76,23 +73,15 @@ deconnect:
 		 util.log("Deconnexion client : " + this.log_temp);
 		database.erase_log(this, "reponse");
 	},
-	
-	
-get_criteres :
+
+update :
 	function (paquets) {
-		db.find_prospects(this, "reponse" ,paquets);
-	},
-	
-send_fax :
-	function (paquets) {
-	util.log("Debut traitement du POST envoie de fax ...");
-	fax.sendFax(this, "reponse" ,paquets.tab_fax);
+	util.log("Debut traitement du POST reprospection ...");
+	up.update(this, "reponse");
 	},
 	
 reponse:
 	function (output, arg) {
-	console.log("---------------------reponse-------------------");
-		// util.log("Envoi de l'objet au navigateur client");
 		if (arg) {
 			this.resp.writeHead(200, {"Content-Type": "application/json", "set-cookie":arg});//--------
 		} else {
